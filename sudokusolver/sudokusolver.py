@@ -136,6 +136,12 @@ class SudokuSolver:
             for unit in grid.units:
                 value_cells_dict = {v: set(c for c in unit if v in c.candidates) for v in self._valid_values()}
                 for value, cells in value_cells_dict.items():
+                    if len(cells) == 0:
+                        continue
+                    if len(cells) == 1:
+                        self._set_value(list(cells)[0], value)
+                        any_progress = True
+                        continue
                     shared_row, shared_column, shared_square = None, None, None
                     for i, cell in enumerate(cells):
                         if i == 0:
