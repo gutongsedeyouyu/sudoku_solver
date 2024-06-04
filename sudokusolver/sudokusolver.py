@@ -71,7 +71,7 @@ class SudokuSolver:
                 if self._is_finished(grid):
                     break
         if not self._is_finished(grid):
-            grid.level = 99
+            grid.level = 90
             guessing_grid = self._solve_by_guessing(grid)
             if guessing_grid:
                 self._copy_grid(guessing_grid, grid)
@@ -163,6 +163,7 @@ class SudokuSolver:
                 break
 
     def _solve_by_guessing(self, grid):
+        grid.level += 1
         guessing_cell = None
         for row in grid.cells:
             for cell in row:
@@ -210,6 +211,7 @@ class SudokuSolver:
             for x in range(9):
                 to_grid.cells[y][x].value = from_grid.cells[y][x].value
                 to_grid.cells[y][x].candidates = set(from_grid.cells[y][x].candidates)
+        to_grid.level = from_grid.level
 
     def _is_finished(self, grid):
         return all(all(c.value for c in r) for r in grid.cells)
