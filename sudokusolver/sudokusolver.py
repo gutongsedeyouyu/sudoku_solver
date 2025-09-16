@@ -43,20 +43,21 @@ class Grid:
 
 
 class SudokuSolver:
-    def __int__(self):
-        pass
+    def __init__(self, valid_values=None, log_level=0):
+        self.valid_values = set(valid_values) if valid_values else set(str(x) for x in range(1, 10))
+        self.log_level = log_level
 
     def load(self, values):
         grid = Grid()
         for y in range(9):
             for x in range(9):
-                cell, value, valid_values = grid.cells[y][x], str(values[y][x]), self._valid_values()
+                cell, value, valid_values = grid.cells[y][x], str(values[y][x]), set(self.valid_values)
                 cell.value = value if value in valid_values else None
                 cell.candidates = set() if value in valid_values else valid_values
         for unit in grid.units:
             unit_values = [c.value for c in unit if c.value]
             if len(unit_values) > len(set(unit_values)):
-                raise Exception('Duplicate values found in a unit.')
+                raise Exception('Failed to load, duplicate values found in a unit.')
         return grid
 
     def solve(self, grid):
@@ -80,16 +81,23 @@ class SudokuSolver:
 
     def write_console(self, grid):
         print('<<< Level: {:02d} >>>'.format(grid.level))
-        print('\n'.join(' '.join(c.value if c.value else '·' for c in r) for r in grid.cells))
+        print('-------------------------')
+        for y in range(9):
+            if y % 3 == 0 and y != 0:
+                print('|-------+-------+-------|')
+            row, row_str = grid.cells[y], '|'
+            for x in range(9):
+                row_str += ' | ' if x % 3 == 0 and x != 0 else ' '
+                row_str += row[x].value if row[x].value else '·'
+            row_str += ' |'
+            print(row_str)
+        print('-------------------------')
         if grid.level > 0 and not self._is_finished(grid):
             for y in range(9):
-                print('----- Line {} -----'.format(y + 1))
+                print('----- Row {} -----'.format(y + 1))
                 for x in range(9):
                     cell = grid.cells[y][x]
                     print(cell.value if cell.value else sorted(cell.candidates))
-
-    def _valid_values(self):
-        return set(str(x) for x in range(1, 10))
 
     def _solve_1(self, grid):
         for unit in grid.units:
@@ -134,7 +142,7 @@ class SudokuSolver:
         while True:
             any_progress = False
             for unit in grid.units:
-                value_cells_dict = {v: set(c for c in unit if v in c.candidates) for v in self._valid_values()}
+                value_cells_dict = {v: set(c for c in unit if v in c.candidates) for v in self.valid_values}
                 for value, cells in value_cells_dict.items():
                     if len(cells) == 0:
                         continue
@@ -188,23 +196,21 @@ class SudokuSolver:
         return None
 
     def _set_value(self, cell, value):
+        if self.log_level > 0 and not cell.value:
+            print(f'·> ({cell.x + 1}, {cell.y + 1}) is {value}.')
         cell.value = value
         cell.candidates.clear()
         for unit in (cell.row, cell.column, cell.square):
             for other_cell in unit:
                 if other_cell is not cell and value in other_cell.candidates:
-                    other_cell.candidates.remove(value)
-                    if len(other_cell.candidates) == 1:
-                        self._set_value(other_cell, other_cell.candidates.pop())
+                    self._remove_candidate(other_cell, value)
 
     def _remove_candidate(self, cell, candidate):
+        if self.log_level > 1:
+            print(f'·· ({cell.x + 1}, {cell.y + 1}) is not {candidate}.')
         cell.candidates.remove(candidate)
         if len(cell.candidates) == 1:
-            cell.value = cell.candidates.pop()
-            for unit in (cell.row, cell.column, cell.square):
-                for other_cell in unit:
-                    if other_cell is not cell and cell.value in other_cell.candidates:
-                        self._remove_candidate(other_cell, cell.value)
+            self._set_value(cell, cell.candidates.pop())
 
     def _copy_grid(self, from_grid, to_grid):
         for y in range(9):
