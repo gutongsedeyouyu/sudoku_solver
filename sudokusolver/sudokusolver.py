@@ -103,7 +103,7 @@ class SudokuSolver:
         for unit in grid.units:
             for cell in unit:
                 if cell.value:
-                    self._set_value(cell, cell.value)
+                    self._set_value(cell, cell.value, grid)
 
     def _solve_n_within_unit(self, grid, n):
         while True:
@@ -123,7 +123,7 @@ class SudokuSolver:
                                 continue
                             for candidate in candidates:
                                 if candidate in cells[i].candidates:
-                                    self._remove_candidate(cells[i], candidate)
+                                    self._remove_candidate(cells[i], candidate, grid)
                                     any_progress = True
                     if any_progress:
                         break
@@ -147,7 +147,7 @@ class SudokuSolver:
                     if len(cells) == 0:
                         continue
                     if len(cells) == 1:
-                        self._set_value(list(cells)[0], value)
+                        self._set_value(list(cells)[0], value, grid)
                         any_progress = True
                         continue
                     shared_row, shared_column, shared_square = None, None, None
@@ -165,7 +165,7 @@ class SudokuSolver:
                         if shared_unit:
                             for other_cell in shared_unit:
                                 if other_cell not in cells and value in other_cell.candidates:
-                                    self._remove_candidate(other_cell, value)
+                                    self._remove_candidate(other_cell, value, grid)
                                     any_progress = True
             if not any_progress:
                 break
@@ -182,7 +182,7 @@ class SudokuSolver:
         for candidate in list(guessing_cell.candidates):
             guessing_grid = Grid()
             self._copy_grid(grid, guessing_grid)
-            self._set_value(guessing_grid.cells[guessing_cell.y][guessing_cell.x], candidate)
+            self._set_value(guessing_grid.cells[guessing_cell.y][guessing_cell.x], candidate, grid)
             for i in range(2, 9):
                 for j in range(i, 1, -1):
                     self._solve_n_within_unit(guessing_grid, j)
@@ -195,22 +195,22 @@ class SudokuSolver:
                     return further_guessing_grid
         return None
 
-    def _set_value(self, cell, value):
+    def _set_value(self, cell, value, grid):
         if self.log_level > 0 and not cell.value:
-            print(f'·> ({cell.x + 1}, {cell.y + 1}) is {value}.')
+            print(f'{grid.level}: ({cell.x + 1}, {cell.y + 1}) == {value}')
         cell.value = value
         cell.candidates.clear()
         for unit in (cell.row, cell.column, cell.square):
             for other_cell in unit:
                 if other_cell is not cell and value in other_cell.candidates:
-                    self._remove_candidate(other_cell, value)
+                    self._remove_candidate(other_cell, value, grid)
 
-    def _remove_candidate(self, cell, candidate):
+    def _remove_candidate(self, cell, candidate, grid):
         if self.log_level > 1:
-            print(f'·· ({cell.x + 1}, {cell.y + 1}) is not {candidate}.')
+            print(f'{grid.level}: ({cell.x + 1}, {cell.y + 1}) != {candidate}')
         cell.candidates.remove(candidate)
         if len(cell.candidates) == 1:
-            self._set_value(cell, cell.candidates.pop())
+            self._set_value(cell, cell.candidates.pop(), grid)
 
     def _copy_grid(self, from_grid, to_grid):
         for y in range(9):
