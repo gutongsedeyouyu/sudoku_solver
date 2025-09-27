@@ -196,8 +196,8 @@ class SudokuSolver:
         return None
 
     def _set_value(self, cell, value, grid):
-        if self.log_level > 0 and not cell.value:
-            print(f'{grid.level}: ({cell.x + 1}, {cell.y + 1}) == {value}')
+        if not cell.value:
+            self._log(f'{grid.level}: ({cell.x + 1}, {cell.y + 1}) == {value}')
         cell.value = value
         cell.candidates.clear()
         for unit in (cell.row, cell.column, cell.square):
@@ -206,8 +206,7 @@ class SudokuSolver:
                     self._remove_candidate(other_cell, value, grid)
 
     def _remove_candidate(self, cell, candidate, grid):
-        if self.log_level > 1:
-            print(f'{grid.level}: ({cell.x + 1}, {cell.y + 1}) != {candidate}')
+        self._log(f'{grid.level}: ({cell.x + 1}, {cell.y + 1}) != {candidate}', level=2)
         cell.candidates.remove(candidate)
         if len(cell.candidates) == 1:
             self._set_value(cell, cell.candidates.pop(), grid)
@@ -227,3 +226,7 @@ class SudokuSolver:
             if len(set(c.value for c in unit)) < 9:
                 return False
         return True
+
+    def _log(self, message, level=1):
+        if self.log_level >= level:
+            print(message)

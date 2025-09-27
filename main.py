@@ -4,7 +4,7 @@ from sudokusolver.sudokusolver import SudokuSolver
 
 
 def main():
-    solver = SudokuSolver(log_level=0)
+    solver = SudokuSolver(log_level=1)
     with open('values.json') as file:
         try:
             values = json_loads(file.read())
