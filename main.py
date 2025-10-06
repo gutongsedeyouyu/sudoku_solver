@@ -9,9 +9,8 @@ def main():
         try:
             values = json_loads(file.read())
             grid = solver.load(values)
-            solver.write_console(grid)
             solver.solve(grid)
-            solver.write_console(grid)
+            solver.write_to_console(grid)
         except Exception as e:
             raise e
 
